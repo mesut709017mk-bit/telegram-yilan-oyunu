@@ -8,7 +8,7 @@
         body {
             background-color: #0b0f19;
             color: white;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -21,21 +21,36 @@
         h1 {
             color: #22c55e;
             margin-bottom: 5px;
-            font-size: 1.8rem;
+            font-size: 2.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(34, 197, 94, 0.5); /* Yeşil ışıltı */
+        }
+        .score-board {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+        #score {
+            color: #ef4444; /* Skor kırmızı */
+            font-weight: bold;
         }
         canvas {
-            border: 4px solid #374151;
+            border: 6px solid #374151;
             background-color: #0c111d;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            max-width: 90vw;  /* Mobil ekranlara sığması için responsive ayar */
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            max-width: 90vw;  /* Mobil ekranlara otomatik sığma */
             max-height: 90vw;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
 
     <h1>YILAN OYUNU</h1>
-    <div style="font-size: 1.2rem; margin-bottom: 10px;">Skor: <span id="score">0</span></div>
+    <div class="score-board">Skor: <span id="score">0</span></div>
     
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     
@@ -67,7 +82,7 @@
             const head = { x: snake[0].x + dx, y: snake[0].y + dy };
             snake.unshift(head);
 
-            // 2. Yem yendi mi kontrolü
+            // 2. Yem (Böcek) yendi mi kontrolü
             if (snake[0].x === food.x && snake[0].y === food.y) {
                 score += 10;
                 scoreElement.innerText = score;
@@ -93,96 +108,38 @@
             ctx.fillStyle = "#0c111d";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Böceği (Yemi) Çiz - Basit kırmızı kare
-            ctx.fillStyle = "#ef4444";
-            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+            // --- BÖCEĞİ (YEMİ) ÇİZ ---
+            ctx.font = `${gridSize - 2}px serif`; // Emoji boyutu ayarı
+            ctx.textBaseline = "top"; 
+            ctx.fillText("🐞", food.x * gridSize, food.y * gridSize);
 
-            // Yılanı Çiz - Kafa koyu yeşil, gövde normal yeşil kareler
+            // --- YILANI ÇİZ ---
             snake.forEach((part, index) => {
-                ctx.fillStyle = index === 0 ? "#166534" : "#22c55e";
-                ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
-            });
-        }
+                const isHead = index === 0;
 
-        function changeDirection(newDx, newDy) {
-            if (newDx === -1 && dx === 1) return;
-            if (newDx === 1 && dx === -1) return;
-            if (newDy === -1 && dy === 1) return;
-            if (newDy === 1 && dy === -1) return;
-            
-            dx = newDx;
-            dy = newDy;
-        }
+                if (isHead) {
+                    // Kafa tasarımı: Koyu yeşil ve dairesel
+                    ctx.fillStyle = "#166534";
+                    ctx.beginPath();
+                    ctx.arc(
+                        part.x * gridSize + gridSize / 2, 
+                        part.y * gridSize + gridSize / 2, 
+                        gridSize / 2 - 1, 
+                        0, 
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                    
+                    // Kafaya göz detayları
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(part.x * gridSize + 5, part.y * gridSize + 5, 3, 3);
+                    ctx.fillRect(part.x * gridSize + 12, part.y * gridSize + 5, 3, 3);
+                    
+                } else {
+                    // Gövde tasarımı: Açık yeşil ve pullu efektli kareler
+                    ctx.fillStyle = "#22c55e";
+                    ctx.fillRect(part.x * gridSize + 1, part.y * gridSize + 1, gridSize - 3, gridSize - 3);
 
-        function handleKeyPress(event) {
-            const key = event.keyCode;
-            if ((key === 37 || key === 65) && dx === 0) changeDirection(-1, 0); // Sol / A
-            if ((key === 38 || key === 87) && dy === 0) changeDirection(0, -1); // Yukarı / W
-            if ((key === 39 || key === 68) && dx === 0) changeDirection(1, 0);  // Sağ / D
-            if ((key === 40 || key === 83) && dy === 0) changeDirection(0, 1);   // Aşağı / S
-        }
-
-        function resetGame() {
-            alert("Oyun Bitti! Skorun: " + score);
-            snake = [
-                { x: 10, y: 10 },
-                { x: 10, y: 11 },
-                { x: 10, y: 12 }
-            ];
-            dx = 0;
-            dy = -1;
-            score = 0;
-            scoreElement.innerText = score;
-            food.x = Math.floor(Math.random() * tileCount);
-            food.y = Math.floor(Math.random() * tileCount);
-        }
-
-        // --- UYUMLU DOKUNMATİK (SWIPE) KONTROLLERİ ---
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchEndX = 0;
-        let touchEndY = 0;
-
-        // Ekrana ilk dokunulduğunda koordinatları kaydet
-        document.addEventListener('touchstart', function(event) {
-            touchStartX = event.changedTouches[0].screenX;
-            touchStartY = event.changedTouches[0].screenY;
-        }, { passive: true });
-
-        // Parmak ekrandan çekildiğinde yönü hesapla ve yılanı yönlendir
-        document.addEventListener('touchend', function(event) {
-            touchEndX = event.changedTouches[0].screenX;
-            touchEndY = event.changedTouches[0].screenY;
-            handleSwipe();
-        }, { passive: true });
-
-        function handleSwipe() {
-            let xDiff = touchEndX - touchStartX;
-            let yDiff = touchEndY - touchStartY;
-            
-            // En az 30 piksellik bir kaydırma olmalı ki hassasiyet düzgün çalışsın
-            if (Math.abs(xDiff) > Math.abs(yDiff)) {
-                // Yatay hareket
-                if (xDiff > 30 && dx === 0) {
-                    changeDirection(1, 0); // Sağ
-                } else if (xDiff < -30 && dx === 0) {
-                    changeDirection(-1, 0); // Sol
-                }
-            } else {
-                // Dikey hareket
-                if (yDiff > 30 && dy === 0) {
-                    changeDirection(0, 1); // Aşağı
-                } else if (yDiff < -30 && dy === 0) {
-                    changeDirection(0, -1); // Yukarı
-                }
-            }
-        }
-
-        // Telegram Mini App'te oyun alanını kaydırmayı engelleme
-        document.addEventListener('touchmove', function(e) {
-            if (e.touches.length > 1) return; // Çift parmak hareketine izin ver zoom için
-            e.preventDefault();
-        }, { passive: false });
-    </script>
-</body>
-</html>
+                    // Pullu doku için hafif saydam iç ışıltı
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+                    ctx.fillRect(part.x * gridSize + 4, part.y *
