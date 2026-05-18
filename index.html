@@ -156,6 +156,50 @@
             food.x = Math.floor(Math.random() * tileCount);
             food.y = Math.floor(Math.random() * tileCount);
         }
+// --- DOKUNMATİK (SWIPE) KONTROLLERİ ---
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
+
+// Ekrana ilk dokunulduğunda koordinatları kaydet
+document.addEventListener('touchstart', function(event) {
+    touchStartX = event.changedTouches[0].screenX;
+    touchStartY = event.changedTouches[0].screenY;
+}, false);
+
+// Parmak ekrandan çekildiğinde yönü hesapla ve yılanı yönlendir
+document.addEventListener('touchend', function(event) {
+    touchEndX = event.changedTouches[0].screenX;
+    touchEndY = event.changedTouches[0].screenY;
+    handleSwipe();
+}, false);
+
+function handleSwipe() {
+    let xDiff = touchEndX - touchStartX;
+    let yDiff = touchEndY - touchStartY;
+    
+    // Hangi eksende daha çok hareket ettirilmiş (Yatay mı Dikey mi?)
+    // En az 30 piksellik bir kaydırma (swipe) olmasını şart koşuyoruz ki yanlışlıkla dokunmalar yönü bozmasın
+    if (Math.abs(xDiff) > Math.abs(yDiff)) {
+        // Yatay hareket
+        if (xDiff > 30 && direction !== 'LEFT') {
+            direction = 'RIGHT';
+        } else if (xDiff < -30 && direction !== 'RIGHT') {
+            direction = 'LEFT';
+        }
+    } else {
+        // Dikey hareket
+        if (yDiff > 30 && direction !== 'UP') {
+            direction = 'DOWN';
+        } else if (yDiff < -30 && direction !== 'DOWN') {
+            direction = 'UP';
+        }
+    }
+}
+
+// Telegram içinde ekranın kazara aşağı/yukarı kaymasını önlemek için (Sadece mobilde çalışır)
+document.body.addEventListener('touchmove', function(e){ e.preventDefault(); }, { passive: false });
     </script>
 </body>
 </html>
