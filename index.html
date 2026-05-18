@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Yılan Oyunu</title>
     <style>
         body {
@@ -15,33 +15,20 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
+            overflow: hidden; /* Ekran kaymasını tamamen engeller */
+            user-select: none; /* Dokunurken metinlerin seçilmesini engeller */
         }
         h1 {
             color: #22c55e;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            font-size: 1.8rem;
         }
         canvas {
             border: 4px solid #374151;
             background-color: #0c111d;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        .buttons {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
-        }
-        .btn {
-            background-color: #374151;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .btn:active {
-            background-color: #22c55e;
+            max-width: 90vw;  /* Mobil ekranlara sığması için responsive ayar */
+            max-height: 90vw;
         }
     </style>
 </head>
@@ -52,8 +39,6 @@
     
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     
-    
-
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
@@ -151,50 +136,53 @@
             food.x = Math.floor(Math.random() * tileCount);
             food.y = Math.floor(Math.random() * tileCount);
         }
-// --- DOKUNMATİK (SWIPE) KONTROLLERİ ---
-let touchStartX = 0;
-let touchStartY = 0;
-let touchEndX = 0;
-let touchEndY = 0;
 
-// Ekrana ilk dokunulduğunda koordinatları kaydet
-document.addEventListener('touchstart', function(event) {
-    touchStartX = event.changedTouches[0].screenX;
-    touchStartY = event.changedTouches[0].screenY;
-}, false);
+        // --- UYUMLU DOKUNMATİK (SWIPE) KONTROLLERİ ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
 
-// Parmak ekrandan çekildiğinde yönü hesapla ve yılanı yönlendir
-document.addEventListener('touchend', function(event) {
-    touchEndX = event.changedTouches[0].screenX;
-    touchEndY = event.changedTouches[0].screenY;
-    handleSwipe();
-}, false);
+        // Ekrana ilk dokunulduğunda koordinatları kaydet
+        document.addEventListener('touchstart', function(event) {
+            touchStartX = event.changedTouches[0].screenX;
+            touchStartY = event.changedTouches[0].screenY;
+        }, { passive: true });
 
-function handleSwipe() {
-    let xDiff = touchEndX - touchStartX;
-    let yDiff = touchEndY - touchStartY;
-    
-    // Hangi eksende daha çok hareket ettirilmiş (Yatay mı Dikey mi?)
-    // En az 30 piksellik bir kaydırma (swipe) olmasını şart koşuyoruz ki yanlışlıkla dokunmalar yönü bozmasın
-    if (Math.abs(xDiff) > Math.abs(yDiff)) {
-        // Yatay hareket
-        if (xDiff > 30 && direction !== 'LEFT') {
-            direction = 'RIGHT';
-        } else if (xDiff < -30 && direction !== 'RIGHT') {
-            direction = 'LEFT';
+        // Parmak ekrandan çekildiğinde yönü hesapla ve yılanı yönlendir
+        document.addEventListener('touchend', function(event) {
+            touchEndX = event.changedTouches[0].screenX;
+            touchEndY = event.changedTouches[0].screenY;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            let xDiff = touchEndX - touchStartX;
+            let yDiff = touchEndY - touchStartY;
+            
+            // En az 30 piksellik bir kaydırma olmalı ki hassasiyet düzgün çalışsın
+            if (Math.abs(xDiff) > Math.abs(yDiff)) {
+                // Yatay hareket
+                if (xDiff > 30 && dx === 0) {
+                    changeDirection(1, 0); // Sağ
+                } else if (xDiff < -30 && dx === 0) {
+                    changeDirection(-1, 0); // Sol
+                }
+            } else {
+                // Dikey hareket
+                if (yDiff > 30 && dy === 0) {
+                    changeDirection(0, 1); // Aşağı
+                } else if (yDiff < -30 && dy === 0) {
+                    changeDirection(0, -1); // Yukarı
+                }
+            }
         }
-    } else {
-        // Dikey hareket
-        if (yDiff > 30 && direction !== 'UP') {
-            direction = 'DOWN';
-        } else if (yDiff < -30 && direction !== 'DOWN') {
-            direction = 'UP';
-        }
-    }
-}
 
-// Telegram içinde ekranın kazara aşağı/yukarı kaymasını önlemek için (Sadece mobilde çalışır)
-document.body.addEventListener('touchmove', function(e){ e.preventDefault(); }, { passive: false });
+        // Telegram Mini App'te oyun alanını kaydırmayı engelleme
+        document.addEventListener('touchmove', function(e) {
+            if (e.touches.length > 1) return; // Çift parmak hareketine izin ver zoom için
+            e.preventDefault();
+        }, { passive: false });
     </script>
 </body>
 </html>
